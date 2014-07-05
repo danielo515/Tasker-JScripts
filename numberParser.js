@@ -4,10 +4,9 @@ function findNumbers(text){
     match,results = new Array(),Words=text.split(/[\s-]+/);
     
     
-    Words.forEach(function(number){
-    if( number in writtenNumbers ){
-        results.push(writtenNumbers[number])
-    }})
+    Words.forEach(function(word){
+        results.push(word in writtenNumbers ? writtenNumbers[word] : word);
+    })
     
-    return results;
+    return results.join(" ");
 }
