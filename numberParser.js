@@ -10,3 +10,5 @@ function findNumbers(text){
     
     return results.join(" ");
 }
+
+avcomm = findNumbers(avcomm);
