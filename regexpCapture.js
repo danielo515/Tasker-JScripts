@@ -6,7 +6,7 @@ function namedRegexp(regexp,text){
     
     //console.log("match ",match);
     for( m in match){
-        if(m.length>3 and match[m]!== undefined)
+        if(m.length>3 && match[m]!== undefined)
             setLocal(m,match[m]);
     }
     
