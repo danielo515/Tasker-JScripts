@@ -20,7 +20,7 @@ function namedRegexp(regexp,text){
     
     //console.log("match ",match);
     for( m in match){
-        if(typeof m !=="number")
+        if(m.length>3)
             setLocal(m,match[m]);
     }
     
