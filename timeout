@@ -1,0 +1,2 @@
+setTimeout(function (){    //append
+    var result = writeFile("/sdcard/Tasker/log/secutize.txt",data,true);})
