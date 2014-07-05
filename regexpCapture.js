@@ -1,4 +1,4 @@
-namedRegexp(".*(?<year>[0-9]{4}).*"," el año 2014 mola");
+namedRegexp(regexp,avcomm);
 
 function namedRegexp(regexp,text){
     regexp = XRegExp(regexp,"i");
