@@ -1,4 +1,4 @@
-namedRegexp(regexp,avcomm);
+//namedRegexp(regexp,avcomm);
 
 function namedRegexp(regexp,text){
     regexp = XRegExp(regexp,"i");
@@ -9,5 +9,6 @@ function namedRegexp(regexp,text){
         if(m.length>3 && match[m]!== undefined)
             setLocal(m,match[m]);
     }
+if(!match) setLocal("error","no match");
     
 }
