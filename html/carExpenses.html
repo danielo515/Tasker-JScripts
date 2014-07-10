@@ -1,0 +1,197 @@
+
+<!DOCTYPE html> 
+<html> 
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<title>Single car expense tracker</title> 
+	 <link rel="stylesheet" href="file:///sdcard/Tasker/javascript/lib/jquery.mobile-1.4.3.min.css" />
+
+    <script src="file:///sdcard/Tasker/javascript/lib/jquery-1.11.1.min.js"></script>
+ <!-- disable loading msg -->
+     <script>
+        $(document).bind("mobileinit", function(){
+         $.mobile.defaultPageTransition = 'none';
+        });
+     </script>
+    <!-- / -->
+    <script src="file:///sdcard/Tasker/javascript/lib/jquery.mobile-1.4.3.min.js"></script>
+    <style>
+        th
+        {
+        border-bottom: 1px solid #d6d6d6;
+        }
+       /* tr:nth-child(even)
+        {
+        background:#BBB;
+        }*/
+    </style>
+</head> 
+
+<body> 
+
+<div data-role="page" id="pg-home" data-theme="b">
+
+    <div data-role="header" data-position="fixed" data-id="head1">
+        <div class="ui-btn-left">
+            <a href="#" data-role="button" data-icon="refresh" data-iconpos="notext">Refresh Data</a><a href="#" data-role="button" data-icon="gear" data-iconpos="notext">Toggle Live Data</a>        </div>
+        <h1>Control</h1>
+        <div class="ui-btn-right">
+            
+            <a href="#" class="btn-logout" data-role="button" data-icon="lock" data-iconpos="notext">Logout</a>
+        </div>
+    </div><!-- /header -->
+
+	<div data-role="content">	
+		
+        <p>        
+        <table data-role="table"  class="ui-responsive table-stripe" data-mode="reflow" id="myTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>amount</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+          </table>
+       </p>        
+        <p><button class="ui-btn ui-shadow btn-load">Load</button></p>
+        <p><button class="ui-btn ui-shadow btn-close">Exit</button></p>
+	</div><!-- /content -->
+	
+	<div data-role="footer" data-position="fixed" data-id="foo1">
+		<h4>Footer content</h4>
+	</div><!-- /footer -->
+	
+</div><!-- /page -->
+
+<script>
+$(function(){
+  $( ".btn-close" ).bind( "tap", tapHandler );
+  $( ".btn-load" ).bind( "tap", loadData );
+  $(".ui-loader").hide();
+
+  function tapHandler( event ){
+      destroyScene('CarUi');
+  }
+    
+    function loadData( event ){
+      flash('Loading');
+     $('#myTable').children('tbody').empty();
+     $('#myTable').append(store.getMonthReport());
+     $('#myTable').trigger('create');
+     $('#myTable').table('refresh');
+    }
+    
+});
+
+    var store = (function () {
+        var d = new Date(),
+        //this are declared as global because are used by several functions
+        curMonth = d.getMonth(),
+        curDay = d.getDate(), 
+        curYear = d.getFullYear();
+
+        var store = loadStore("/sdcard/Tasker/data/","car.json");
+        initializeStore(store);
+
+        function addRecord(amount){
+
+            var hour = d.getHours(), minute = d.getMinutes(),second = d.getSeconds();
+            amount = parseInt(amount);
+            var expenseID = [curYear,curMonth,curDay,hour,minute,second].join("_");
+            store.total += amount;
+            store.totalMonth += amount;
+            store[curYear][curMonth][expenseID] ={ "day":curDay,"amount":amount };
+        }
+
+        function getDay(day,month,year){
+            day = day || curDay; month = month || curMonth;
+            year = year || curYear;
+            for (var d in store[year][month])
+                if(store[year][month][d].day == day)
+                    return store[year][month][d].amount;
+
+            return false;
+        }
+
+        //#Get month
+        //returns all the days that a month has. If no month or year provided
+        //current ones will be used.
+        function getMonth(month,year){
+            month = month || curMonth; year = year || curYear;
+            var monthData = store[year][month],
+            result = [];
+            for(var day in monthData )
+                result.push( monthData[day] );	
+            return result;
+        }
+
+        //#Get month report
+        //returns a report of the days that a month has. 
+        //If no month or year provided current ones will be used.
+        function getMonthReport(month,year){
+            month = month || curMonth; year = year || curYear;
+            var result = [],
+            monthData = getMonth(month,year);
+            monthData.forEach( function(day) {
+                result.push( digitsToString("-",day.day,month,year) +"</td><td>"+ day.amount);
+            });
+
+            return result.length > 0 ? "<tr><td>"+result.join("</td></tr><td>") + "</td></tr>": "";
+        }
+
+        function digitsToString(separator/*,numbers*/){
+            var args =  Array.prototype.slice.call(arguments,1),result = [];
+            args.forEach(function(numb){
+                result.push( numb > 10 ? numb : "0"+numb );
+            });
+            return result.join(separator);
+        }
+        //#InitializeStore
+        //{object} store an existing store or an empty one.
+        // This function creates the structure. If any required field does not exist it will create it.
+        function initializeStore(store){
+
+            store.total = store.total || 0;
+
+            if( store.curMonth != curMonth  ){
+              store.curMonth = curMonth;
+              store.totalMonth = 0;
+          }
+
+            store[curYear] = store[curYear] || {};
+            store[curYear][curMonth] = store[curYear][curMonth] || {};
+        }
+
+        //loads the store from the data file
+        //{string} path: a string indicating the path to load the store from. It should end with slash (/)
+        function loadStore(path,file){
+            var dir = shell("[ -d "+path+" ] && echo 1 || echo 0",true);
+            if(dir == 0){ 
+                shell("mkdir -p "+path,true); 
+                shell("touch "+path+file,true); 
+                return {};
+            }
+            var content = readFile(path+file);
+            return content ? JSON.parse(content) : {};
+
+        }
+
+        //saves the store to the data file
+        function saveStore(store){
+            var data = JSON.stringify(store);
+            //do not append
+            var result = writeFile("/sdcard/Tasker/data/car.json",data,false);
+            return result;
+        }
+        
+        var core = {getMonthReport:getMonthReport};
+        
+        return core;
+            }());
+</script>
+</body>
+</html>
