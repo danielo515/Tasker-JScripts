@@ -6,37 +6,80 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
 	<title>Single page template</title> 
-	 <link rel="stylesheet" href=" file:///sdcard/Tasker/javascript/lib/jquery.mobile-1.4.3.min.css" />
+	 <link rel="stylesheet" href="file:///sdcard/Tasker/javascript/lib/jquery.mobile-1.4.3.min.css" />
 
     <script src="file:///sdcard/Tasker/javascript/lib/jquery-1.11.1.min.js"></script>
+ <!-- disable loading msg -->
+     <script>
+        $(document).bind("mobileinit", function(){
+         $.mobile.defaultPageTransition = 'none';
+        });
+     </script>
+    <!-- / -->
     <script src="file:///sdcard/Tasker/javascript/lib/jquery.mobile-1.4.3.min.js"></script>
 </head> 
 
 <body> 
 
-<div data-role="page">
+<div data-role="page" id="pg-home" data-theme="b">
 
-	<div data-role="header">
-		<h1>Single page</h1>
-	</div><!-- /header -->
+    <div data-role="header" data-position="fixed" data-id="head1">
+        <div class="ui-btn-left">
+            <a href="#" data-role="button" data-icon="refresh" data-iconpos="notext">Refresh Data</a><a href="#" data-role="button" data-icon="gear" data-iconpos="notext">Toggle Live Data</a>        </div>
+        <h1>Control</h1>
+        <div class="ui-btn-right">
+            
+            <a href="#" class="btn-logout" data-role="button" data-icon="lock" data-iconpos="notext">Logout</a>
+        </div>
+    </div><!-- /header -->
 
 	<div data-role="content">	
 		<ul data-role="listview" data-inset="true" data-filter="true">
-            <li><a href="#">Acura</a></li>
-            <li><a href="#">Audi</a></li>
-            <li><a href="#">BMW</a></li>
-            <li><a href="#">Cadillac</a></li>
-            <li><a href="#">Ferrari</a></li>
+            <li><a href="#pg-control">Acura</a></li>
         </ul>
-		<p> <a href="#" class="ui-btn ui-shadow">Anchor</a>
-			<button class="ui-btn ui-shadow">Button</button></p>
+		<p><button class="ui-btn ui-shadow btn-close">Exit</button></p>
+
 	</div><!-- /content -->
 	
-	<div data-role="footer">
+	<div data-role="footer" data-position="fixed" data-id="foo1">
 		<h4>Footer content</h4>
 	</div><!-- /footer -->
 	
 </div><!-- /page -->
+    
+<div data-role="page" id="pg-control" data-theme="b">
+    
+    <div data-role="header" data-position="fixed" data-id="head1">
+        <div class="ui-btn-left">
+            <a href="#" data-role="button" data-icon="refresh" data-iconpos="notext">Refresh Data</a><a href="#" data-role="button" data-icon="gear" data-iconpos="notext">Toggle Live Data</a>        </div>
+        <h1>Control</h1>
+        <div class="ui-btn-right">
+            
+            <a href="#" class="btn-logout" data-role="button" data-icon="lock" data-iconpos="notext">Logout</a>
+        </div>
+    </div><!-- /header -->
+    
+    <div data-role="content">    
+        <ul data-role="listview" data-inset="true" data-dividertheme="f">
+            <li><a href="#pg-home" data-direction="reverse">Home</a></li>
+        </ul>
+    </div><!-- /content -->
+    
+    <div data-role="footer" data-position="fixed"  data-id="foo1">
+        <h4 class="status-message">Footer content</h4>
+    </div><!-- /footer -->
+</div><!-- /page -->
 
+<script>
+$(function(){
+  $( ".btn-close" ).bind( "tap", tapHandler );
+  $(".ui-loader").hide();
+  function tapHandler( event ){
+    //$( event.target ).addClass( "tap" );
+      flash('going to exit');
+      destroyScene('Testui');
+  }
+});
+</script>
 </body>
 </html>
