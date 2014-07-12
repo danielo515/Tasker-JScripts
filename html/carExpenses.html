@@ -22,6 +22,8 @@
         {
         border-bottom: 1px solid #d6d6d6;
         }
+        .amount{ color: #2EFE2E; }
+		.total{ border-top: 2px solid; }
        /* tr:nth-child(even)
         {
         background:#BBB;
@@ -45,7 +47,10 @@
 
 	<div data-role="content">	
 		
-        <p>        
+     <div data-role="collapsible" data-inset="false">
+		 <h2>
+			 Current Month
+		 </h2>
         <table data-role="table"  class="ui-responsive table-stripe" data-mode="reflow" id="myTable">
           <thead>
             <tr>
@@ -56,8 +61,7 @@
           <tbody>
           </tbody>
           </table>
-       </p>        
-        <p><button class="ui-btn ui-shadow btn-load">Load</button></p>
+       </div>        
         <p><button class="ui-btn ui-shadow btn-close">Exit</button></p>
 	</div><!-- /content -->
 	
@@ -72,19 +76,34 @@ $(function(){
   $( ".btn-close" ).bind( "tap", tapHandler );
   $( ".btn-load" ).bind( "tap", loadData );
   $(".ui-loader").hide();
-
   function tapHandler( event ){
       destroyScene('CarUi');
   }
     
-    function loadData( event ){
+	loadData();
+    
+	function loadData( event ){
       flash('Loading');
      $('#myTable').children('tbody').empty();
      $('#myTable').append(store.getMonthReport());
      $('#myTable').trigger('create');
      $('#myTable').table('refresh');
+	 $('#myTable').append("<tr><td>TOTAL</td><td class='total' ><span>"+sumTotal()+"</span></td></tr>");
     }
-    
+	
+	function sumTotal(){
+		var sum = 0;
+		// iterate through each td based on class and add the values
+		$(".amount").each(function() {
+			var value = $(this).text();
+			// add only if the value is number
+			if(!isNaN(value) && value.length != 0) {
+				sum += parseFloat(value);
+			}
+		});
+		return sum;
+	}
+	    
 });
 
     var store = (function () {
@@ -122,8 +141,7 @@ $(function(){
         //current ones will be used.
         function getMonth(month,year){
             month = month || curMonth; year = year || curYear;
-            var monthData = store[year][month],
-            result = [];
+            var monthData = store[year][month], result = [];
             for(var day in monthData )
                 result.push( monthData[day] );	
             return result;
@@ -134,10 +152,11 @@ $(function(){
         //If no month or year provided current ones will be used.
         function getMonthReport(month,year){
             month = month || curMonth; year = year || curYear;
-            var result = [],
+            var result = [], total=0,
             monthData = getMonth(month,year);
             monthData.forEach( function(day) {
-                result.push( digitsToString("-",day.day,month,year) +"</td><td>"+ day.amount);
+				total += day.amount;
+                result.push( digitsToString("-",day.day,month,year) +"</td><td><span  class='amount'>"+ day.amount+"</span>");
             });
 
             return result.length > 0 ? "<tr><td>"+result.join("</td></tr><td>") + "</td></tr>": "";
@@ -169,15 +188,15 @@ $(function(){
         //loads the store from the data file
         //{string} path: a string indicating the path to load the store from. It should end with slash (/)
         function loadStore(path,file){
-            var dir = shell("[ -d "+path+" ] && echo 1 || echo 0",true);
+            var content = readFile(path+file);
+			if( content ) return content ? JSON.parse(content) : {};
+		
+			var dir = shell("[ -d "+path+" ] && echo 1 || echo 0",true);
             if(dir == 0){ 
                 shell("mkdir -p "+path,true); 
                 shell("touch "+path+file,true); 
                 return {};
             }
-            var content = readFile(path+file);
-            return content ? JSON.parse(content) : {};
-
         }
 
         //saves the store to the data file

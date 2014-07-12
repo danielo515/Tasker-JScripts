@@ -1,0 +1,112 @@
+
+<!DOCTYPE html> 
+<html> 
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<title>Single page template</title> 
+	 <link rel="stylesheet" href="file:///sdcard/Tasker/javascript/lib/jquery.mobile-1.4.3.min.css" />
+
+    <script src="file:///sdcard/Tasker/javascript/lib/jquery-1.11.1.min.js"></script>
+ <!-- disable loading msg -->
+     <script>
+        $(document).bind("mobileinit", function(){
+         $.mobile.defaultPageTransition = 'none';
+        });
+     </script>
+    <!-- / -->
+    <script src="file:///sdcard/Tasker/javascript/lib/jquery.mobile-1.4.3.min.js"></script>
+    <style>
+        #output{
+            border: 1px solid;
+            font-size: small;
+            font-family: monospace;
+        }
+    </style>
+</head> 
+
+<body> 
+
+<div data-role="page" id="pg-home" data-theme="b">
+
+    <div data-role="header" data-position="fixed" data-id="head1">
+        <input type="hidden" id="clipboard"/>
+        <div class="ui-btn-left">
+            <a href="#" data-role="button" data-icon="check" data-iconpos="notext" class="btn-copy">Copy to clipboard</a>        
+        </div>
+        <h1>Control</h1>
+        <div class="ui-btn-right">
+            <a href="#" data-role="button" data-icon="delete" data-iconpos="notext" class="btn-close">exit</a>
+        </div>
+    </div><!-- /header -->
+
+	<div data-role="content">	
+		<label for="basic">Query</label>
+        <textarea data-clear-btn="true" name="name" id="query" rows=3></textarea>
+        <div data-role="fieldcontain">
+            <label for="select-db" class="select">Database to query</label>
+            <select name="select-db" id="select-db" data-mini="true">
+                <option value="/data/data/com.whatsapp/databases/wa.db">contacts</option>
+                <option value="/data/data/com.whatsapp/databases/msgstore.db">messages</option>
+            </select>
+        </div>
+        
+        <div data-role="fieldcontain">
+            <label for="select-queries" class="select">Pre-set queries</label>
+            <select name="select-queries" id="select-queries" data-mini="true">
+                <option value='SELECT data,key_remote_jid,remote_resource FROM messages WHERE key_remote_jid like "%us" order by timestamp desc LIMIT 10'>select groups messages DESC</option>
+                <option value='SELECT data,key_remote_jid,remote_resource FROM messages WHERE key_remote_jid like "%us" order by timestamp asc LIMIT 10'>select groups messages</option>
+                <option value='SELECT display_name,jid FROM wa_contacts WHERE display_name like "La%" LIMIT 1'>display name</option>
+            </select>
+        </div>
+        
+        <button class="ui-btn" id="btn-groups"  data-mini="true">Get group messages</button>
+        <button class="ui-btn" id="btn-execute"  data-mini="true">Execute</button>
+
+        <div id="output">
+        </div>
+
+	</div><!-- /content -->
+	
+</div><!-- /page -->
+    
+
+<script>
+$(function(){
+  $( ".btn-close" ).bind( "tap", tapHandler );
+  $( ".btn-copy" ).bind( "tap",copyToClipboard );
+  $( "#select-queries" ).on( "change",function(){ $("#query").val(this.value)} );
+  $(".ui-loader").hide();
+  $( "#btn-groups" ).bind( "tap",getGroupMessages);
+  $( "#btn-execute" ).bind( "tap", function(){ $("#output").html(executeQuery() ) } );
+  function tapHandler( event ){
+      destroyScene('sqlUi');
+  }
+    
+ function copyToClipboard(){
+     var execQuery = $("#clipboard").val();
+     flash(global( 'CLIP' ));
+     setClipboard(execQuery,false);
+ };
+    
+function getGroupMessages(){
+    var groupname = $("#query").val(),
+        groupID = executeQuery('SELECT jid FROM wa_contacts WHERE display_name like "%'+groupname+'%"');
+    flashLong(groupname);    
+    flashLong(typeof groupID);
+    $("#output").html( executeQuery('SELECT data,remote_resource FROM messages WHERE key_remote_jid = "'+groupID+'" order by timestamp asc LIMIT 50') );
+}
+    
+ function executeQuery(sentence){
+     var queryStr="sqlite3", db=$("#select-db option:selected").val(), queryField= sentence || "'"+$("#query").val()+"';";
+     var execQuery = [queryStr,db,queryField].join(" ");
+     var result=shell(execQuery,true);
+     $("#clipboard").val(execQuery);
+     return result;     
+ };
+
+});
+</script>
+</body>
+</html>
