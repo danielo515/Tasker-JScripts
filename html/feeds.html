@@ -87,44 +87,7 @@ function sayFeed(){
 function tapHandler( event ){
       destroyScene('feeds');
   }
-    
-
-   
- function listSources(){
-	 var template='<li><a href="#pg-feed" feed="#feed#" class="sourceItem">#feedTitle#</a></li>';
-	 var sources = readFile("Tasker/data/feedly.opml");
-	 var list = paprseOPM(sources);
-	 list.forEach(function(i){
-		 if(i["type"])
-			$("#feedList").append(
-				template.replace("#feedTitle#",i.title)
-			            .replace("#feed#",i.title)
-			);
-	 });
-	  $(".sourceItem").on("tap",loadFeed);
-	 $("#feedList").listview("refresh");
- }
-
-	 function paprseOPM(data){
-		 var result = [];
-         var $xml = $(data);
-        $xml.find("outline").each(function() {
-            var $this = $(this),
-                item = {
-                    title: $this.attr("title"),
-                    link: $this.attr("xmlUrl"),
-                    description: $this.attr("text"),
-					content: $this.attr("content"),
-                    type: $this.attr("type")
-            };
-        //flash(item.title);
-            //Do something with item here...
-            result.push(item); 
-        });
-
-     return result;
-};
-	
+    	 	
 	
  function executeQuery(data){
     var result = [];
@@ -170,8 +133,50 @@ function tapHandler( event ){
     
 var feedsStore = (function(){
     var currentFeed=[], currentNew=0,container,feedsList={};
+     
     
-    var core={};
+    function paprseOPM(data){
+		 var result = [];
+         var $xml = $(data);
+        $xml.find("outline").each(function() {
+            var $this = $(this),
+                item = {
+                    title: $this.attr("title"),
+                    link: $this.attr("xmlUrl"),
+                    description: $this.attr("text"),
+					content: $this.attr("content"),
+                    type: $this.attr("type")
+            };
+            result.push(item); 
+        });
+
+     return result;
+}
+    function loadSources(){
+        var sources = readFile("Tasker/data/feedly.opml"),
+	    list = paprseOPM(sources),category="";
+        list.forEach(function(i){
+		 if(i["type"]){
+             feedsList[category].push(i);
+         }else{
+             category = i.title;
+             feedsList[category] = [];
+         }	 });
+    }
+    
+    
+    function listSources(category){
+	 var template='<li><a href="#pg-feed" feed="#feed#" class="sourceItem">#feedTitle#</a></li>';
+			for(i in feedsList[category])
+                $("#feedList").append(
+                    template.replace("#feedTitle#",i.title)
+			                .replace("#feed#",i.title)
+			);
+
+     $(".sourceItem").on("tap",loadFeed);
+	 $("#feedList").listview("refresh");
+ }
+    var core={ list: listSources };
     return core;
 }());
 </script>
