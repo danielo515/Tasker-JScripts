@@ -83,17 +83,6 @@ $(function(){
 function sayFeed(){
     say($("#rawText").val(), "com.google.android.tts", "spa-esp", "media", 7, 7);
 }
-    
-function readFeed(){
-	var items = executeQuery(readFile("Tasker/data/feed.xml")),
-	result=[];
-	for(var i=0;i<items.length;i++){
-		result.push(items[i].title); 
-		result.push(items[i].description); 
-		result.push(items[i].content);
-	}
-	return result.join("<br>");
-}
 	
 function tapHandler( event ){
       destroyScene('feeds');
@@ -180,7 +169,7 @@ function tapHandler( event ){
 });
     
 var feedsStore = (function(){
-    var currentFeed=[], currentNew=0,container;
+    var currentFeed=[], currentNew=0,container,feedsList={};
     
     var core={};
     return core;
