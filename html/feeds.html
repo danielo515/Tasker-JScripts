@@ -33,7 +33,7 @@
     <div data-role="header" data-position="fixed" data-id="head1">
         <input type="hidden" id="clipboard"/>
         <div class="ui-btn-left">
-            <a href="#" data-role="button" data-icon="check" data-iconpos="notext" class="btn-copy">Copy to clipboard</a>
+            <a href="#" data-role="button" data-icon="back" data-iconpos="notext" class="btn-copy">Copy to clipboard</a>
         </div>
         <h1>Control</h1>
         <div class="ui-btn-right">
@@ -42,24 +42,43 @@
     </div><!-- /header -->
 
 	<div data-role="content">	
-		<ul data-role="listview" data-inset="true" id="feedList" data-filter="true">
+		<ul data-role="listview" data-inset="true" id="categoryList" data-filter="true">
         </ul>
 
 	</div><!-- /content -->
 	
 </div><!-- /page -->
 
-	<div data-role="page" id="pg-feed" data-theme="b">
-        <input type="hidden" id="rawText"/>
-
+	<div data-role="page" id="pg-category" data-theme="b">
 		<div data-role="header" data-position="fixed" data-id="head1">
             
 			<div class="ui-btn-left">
-				<a href="#pg-home" data-role="button" data-icon="check" data-iconpos="notext" class="btn-copy">Back</a>
-                <button class="ui-btn" id="btn-say"  data-mini="true">READ</button>
+				<a href="#pg-home" data-role="button" data-icon="back" data-iconpos="notext" class="btn-copy">Back</a>
 			</div>
             <h1>Feed</h1>
 			<div class="ui-btn-right">
+				<a href="#" data-role="button" data-icon="delete" data-iconpos="notext" class="btn-close">exit</a>
+			</div>
+		</div><!-- /header -->
+
+		<div data-role="content">	
+			<ul data-role="listview" data-inset="true" id="feedList" data-filter="true">
+			</ul>
+		</div><!-- /content -->
+	
+	</div><!-- /page -->    
+	
+		<div data-role="page" id="pg-feed" data-theme="b">
+		<div data-role="header" data-position="fixed" data-id="head1">
+            
+			<div class="ui-btn-left">
+				<a href="#pg-home" data-role="button" data-icon="back" data-iconpos="notext" class="btn-copy">Back</a>
+                <a href="#" data-role="button" data-icon="arrow-l" data-iconpos="notext" class="btn-item-previous">Previous Item</a>
+				<button class="ui-btn" id="btn-say"  data-mini="true">READ</button>
+			</div>
+            <h1>Feed</h1>
+			<div class="ui-btn-right">
+                <a href="#" data-role="button" data-icon="arrow-r" data-iconpos="notext" class="btn-item-next">Next Item</a>
 				<a href="#" data-role="button" data-icon="delete" data-iconpos="notext" class="btn-close">exit</a>
 			</div>
 		</div><!-- /header -->
@@ -70,70 +89,55 @@
 
 		</div><!-- /content -->
 	
-</div><!-- /page -->    
+	</div><!-- /page -->  
 
 <script>
 $(function(){
-  $( ".btn-close" ).bind( "tap", tapHandler );
-  $(".ui-loader").hide();
-  listSources();
-//  $( "#btn-execute" ).bind( "tap", function(){ $("#output").html(readFeed() ) } );
-    $( "#btn-say" ).on( "tap",sayFeed);
+	$(".btn-close").bind( "tap", function( ){destroyScene('feeds');} );
+	$(".ui-loader").hide();
+	$("#categoryList").append(feedsStore.listCategories());
+	$("#categoryList").listview("refresh");
+	$("#btn-say").on("tap",function(){feedsStore.say()});
+	$(".btn-item-next").on("tap",function(){
+		var container = $("#feedItems");
+		container.empty();
+		container.append(feedsStore.next());
+		container.trigger('create');
+	}); 
+	$(".btn-item-previous").on("tap",function(){
+		var container = $("#feedItems");
+		container.empty();
+		container.append(feedsStore.previous());
+		container.trigger('create');
+	}); 
+	
+	$("#pg-home").on("tap",".categoryItem",function(){
+	  $("#feedList").empty();
+	  $("#feedList").append(
+		  feedsStore.list( $(this).attr("category"))
+	  );
+	  $("#feedList").listview("refresh");
+  });
+	
+	$("#pg-category").on("tap",".sourceItem",function(){
+		var container = $("#feedItems"),feedName=$(this).attr("feed");
+		container.empty();
+		container.append(feedsStore.load(feedName));
+		$.mobile.navigate($(this).attr("href"));
+	});
+	
+  $( "#btn-say" ).on( "tap",sayFeed);
   
 function sayFeed(){
     say($("#rawText").val(), "com.google.android.tts", "spa-esp", "media", 7, 7);
 }
 	
-function tapHandler( event ){
-      destroyScene('feeds');
-  }
-    	 	
-	
- function executeQuery(data){
-    var result = [];
-        var $xml = $(data);
-        $xml.find("item").each(function() {
-            var $this = $(this);
-            console.log($this);
-            var    item = {
-                    title: $this.find("title").text(),
-                    link: $this.find("link").text(),
-                    description: $this.find("description").text(),
-                    pubDate: $this.find("pubDate").text(), 
-                content: $this.find("content\\:encoded").text(), 
-                    author: $this.find("author").text()
-            };
-            //Do something with item here...
-            result.push(item); 
-        });
-
-     return result;
-};
-	
-	function loadFeed(){
-		var feedName = $(this).attr("feed");
-		var feed = readFile("/sdcard/Tasker/feeds/"+feedName+".xml"),
-		items = executeQuery(feed),
-		template='<div class="feedItem"><h3>#title#</h3><div>#feedBody#</div></div>';
-		var container = $("#feedItems");
-		container.empty(); $("#rawText").empty();
-		for(var i=0;i<items.length;i++){
-			//flash(items[i].title);
-			container.append(
-				template.replace("#title#",items[i].title)
-				        .replace("#feedBody#",items[i].description/* + items[i].content*/));
-		      
-            $("#rawText").val($("#rawText").val()+items[i].title+items[i].content);
-        }
-		flash("FeedsLoaded");
-		$.mobile.changePage($(this).attr("href"));
-	}
-
 });
     
 var feedsStore = (function(){
-    var currentFeed=[], currentNew=0,container,feedsList={};
-     
+    var currentFeed=[]; 
+	var currentItem=0,feedsList={};
+     loadSources();
     
     function paprseOPM(data){
 		 var result = [];
@@ -151,7 +155,48 @@ var feedsStore = (function(){
         });
 
      return result;
-}
+	}
+	
+	function sayCurrentFeed(){
+		say(currentFeed[currentItem]);	
+	}
+	
+//parses an XML and extracts the items specified in the itemDesc object	
+ function extractItems(data,itemDesc){
+	 var result = [],
+		 xml = $.parseXML(data), $xml = $(xml),
+		 elements = itemDesc.elements;
+        $xml.find(itemDesc.name).each(function() {
+            var $this = $(this),
+		    item = {};
+			for(var el in elements){
+				item[el] = $this.find(elements[el]).text()
+			}
+            //Do something with item here...
+            result.push(item); 
+        });
+
+     return result;
+ }
+	function loadFeed(feedName){
+		currentItem=0;
+		var feed = readFile("/sdcard/Tasker/feeds/"+feedName+".xml");
+		currentFeed = extractItems(feed, {name: "item",elements: 
+									{ title: "title", link: "link", description: "description", 
+										   pubDate: "pubDate", content: "content\\:encoded", author: "author" 
+									}});
+		flash("Feed loaded");
+		return renderItem(currentFeed[0]);
+	}
+	
+	function renderItem(item){
+		var template='<div class="feedItem"><h3>#title#</h3><div>#feedBody#</div></div>';
+		flashLong(item.title);
+		return $(template.replace("#title#",item.title)
+				.replace("#feedBody#",item.description/* + items[i].content*/));
+		
+	}
+	
     function loadSources(){
         var sources = readFile("Tasker/data/feedly.opml"),
 	    list = paprseOPM(sources),category="";
@@ -161,22 +206,45 @@ var feedsStore = (function(){
          }else{
              category = i.title;
              feedsList[category] = [];
-         }	 });
+         }	 
+		});
     }
+	
+	function nextItem(){
+		if(currentItem < currentFeed.length)
+			currentItem += 1;
+		flashLong("Next item "+currentItem+" of "+currentFeed.length);
+		return renderItem(currentFeed[currentItem]);
+	}
+	
+	function previousItem(){
+		if(currentItem > 0 )
+			currentItem -= 1;
+		return renderItem(currentFeed[currentItem]);
+	}
     
-    
-    function listSources(category){
-	 var template='<li><a href="#pg-feed" feed="#feed#" class="sourceItem">#feedTitle#</a></li>';
-			for(i in feedsList[category])
-                $("#feedList").append(
-                    template.replace("#feedTitle#",i.title)
-			                .replace("#feed#",i.title)
+    function listCategories(){
+		var template='<li><a href="#pg-category" category="#categoryName#" class="categoryItem">#categoryName#</a></li>',
+			result = [];
+		for(var i in feedsList){
+			result.push(
+				$(template.replace(/#categoryName#/g,i))
 			);
-
-     $(".sourceItem").on("tap",loadFeed);
-	 $("#feedList").listview("refresh");
- }
-    var core={ list: listSources };
+		}
+	  return result;
+	}
+	
+    function listSources(category){
+	 var template='<li><a href="#pg-feed" feed="#feedTitle#" class="sourceItem">#feedTitle#</a></li>',
+		 result = [],selectedCategory=feedsList[category];
+		selectedCategory.forEach( function(item){
+                    result.push($(template.replace(/#feedTitle#/g,item.title)));
+		});
+		return result;
+     }
+	
+	var core={ list:listSources, listCategories:listCategories, load:loadFeed,
+			  next:nextItem, previous:previousItem, say:sayCurrentFeed};
     return core;
 }());
 </script>
