@@ -1,0 +1,190 @@
+
+<!DOCTYPE html> 
+<html> 
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<title>Single page template</title> 
+	 <link rel="stylesheet" href="file:///sdcard/Tasker/javascript/lib/jquery.mobile-1.4.3.min.css" />
+
+    <script src="file:///sdcard/Tasker/javascript/lib/jquery-1.11.1.min.js"></script>
+ <!-- disable loading msg -->
+     <script>
+        $(document).bind("mobileinit", function(){
+         $.mobile.defaultPageTransition = 'none';
+        });
+     </script>
+    <!-- / -->
+    <script src="file:///sdcard/Tasker/javascript/lib/jquery.mobile-1.4.3.min.js"></script>
+    <style>
+        #output{
+            border: 1px solid;
+            font-size: small;
+            font-family: monospace;
+        }
+    </style>
+</head> 
+
+<body> 
+
+	<div data-role="page" id="pg-home" data-theme="b">
+
+    <div data-role="header" data-position="fixed" data-id="head1">
+        <input type="hidden" id="clipboard"/>
+        <div class="ui-btn-left">
+            <a href="#" data-role="button" data-icon="check" data-iconpos="notext" class="btn-copy">Copy to clipboard</a>
+        </div>
+        <h1>Control</h1>
+        <div class="ui-btn-right">
+            <a href="#" data-role="button" data-icon="delete" data-iconpos="notext" class="btn-close">exit</a>
+        </div>
+    </div><!-- /header -->
+
+	<div data-role="content">	
+		<ul data-role="listview" data-inset="true" id="feedList" data-filter="true">
+        </ul>
+
+	</div><!-- /content -->
+	
+</div><!-- /page -->
+
+	<div data-role="page" id="pg-feed" data-theme="b">
+        <input type="hidden" id="rawText"/>
+
+		<div data-role="header" data-position="fixed" data-id="head1">
+            
+			<div class="ui-btn-left">
+				<a href="#pg-home" data-role="button" data-icon="check" data-iconpos="notext" class="btn-copy">Back</a>
+                <button class="ui-btn" id="btn-say"  data-mini="true">READ</button>
+			</div>
+            <h1>Feed</h1>
+			<div class="ui-btn-right">
+				<a href="#" data-role="button" data-icon="delete" data-iconpos="notext" class="btn-close">exit</a>
+			</div>
+		</div><!-- /header -->
+
+		<div data-role="content">	
+			<div id="feedItems">
+			</div>
+
+		</div><!-- /content -->
+	
+</div><!-- /page -->    
+
+<script>
+$(function(){
+  $( ".btn-close" ).bind( "tap", tapHandler );
+  $(".ui-loader").hide();
+  listSources();
+//  $( "#btn-execute" ).bind( "tap", function(){ $("#output").html(readFeed() ) } );
+    $( "#btn-say" ).on( "tap",sayFeed);
+  
+function sayFeed(){
+    say($("#rawText").val(), "com.google.android.tts", "spa-esp", "media", 7, 7);
+}
+    
+function readFeed(){
+	var items = executeQuery(readFile("Tasker/data/feed.xml")),
+	result=[];
+	for(var i=0;i<items.length;i++){
+		result.push(items[i].title); 
+		result.push(items[i].description); 
+		result.push(items[i].content);
+	}
+	return result.join("<br>");
+}
+	
+function tapHandler( event ){
+      destroyScene('feeds');
+  }
+    
+
+   
+ function listSources(){
+	 var template='<li><a href="#pg-feed" feed="#feed#" class="sourceItem">#feedTitle#</a></li>';
+	 var sources = readFile("Tasker/data/feedly.opml");
+	 var list = paprseOPM(sources);
+	 list.forEach(function(i){
+		 if(i["type"])
+			$("#feedList").append(
+				template.replace("#feedTitle#",i.title)
+			            .replace("#feed#",i.title)
+			);
+	 });
+	  $(".sourceItem").on("tap",loadFeed);
+	 $("#feedList").listview("refresh");
+ }
+
+	 function paprseOPM(data){
+		 var result = [];
+         var $xml = $(data);
+        $xml.find("outline").each(function() {
+            var $this = $(this),
+                item = {
+                    title: $this.attr("title"),
+                    link: $this.attr("xmlUrl"),
+                    description: $this.attr("text"),
+					content: $this.attr("content"),
+                    type: $this.attr("type")
+            };
+        //flash(item.title);
+            //Do something with item here...
+            result.push(item); 
+        });
+
+     return result;
+};
+	
+	
+ function executeQuery(data){
+    var result = [];
+        var $xml = $(data);
+        $xml.find("item").each(function() {
+            var $this = $(this);
+            console.log($this);
+            var    item = {
+                    title: $this.find("title").text(),
+                    link: $this.find("link").text(),
+                    description: $this.find("description").text(),
+                    pubDate: $this.find("pubDate").text(), 
+                content: $this.find("content\\:encoded").text(), 
+                    author: $this.find("author").text()
+            };
+            //Do something with item here...
+            result.push(item); 
+        });
+
+     return result;
+};
+	
+	function loadFeed(){
+		var feedName = $(this).attr("feed");
+		var feed = readFile("/sdcard/Tasker/feeds/"+feedName+".xml"),
+		items = executeQuery(feed),
+		template='<div class="feedItem"><h3>#title#</h3><div>#feedBody#</div></div>';
+		var container = $("#feedItems");
+		container.empty(); $("#rawText").empty();
+		for(var i=0;i<items.length;i++){
+			//flash(items[i].title);
+			container.append(
+				template.replace("#title#",items[i].title)
+				        .replace("#feedBody#",items[i].description/* + items[i].content*/));
+		      
+            $("#rawText").val($("#rawText").val()+items[i].title+items[i].content);
+        }
+		flash("FeedsLoaded");
+		$.mobile.changePage($(this).attr("href"));
+	}
+
+});
+    
+var feedsStore = (function(){
+    var currentFeed=[], currentNew=0,container;
+    
+    var core={};
+    return core;
+}());
+</script>
+</body>
+</html>
