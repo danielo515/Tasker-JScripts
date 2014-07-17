@@ -106,7 +106,8 @@ $(function(){
 	$("#categoryList").append(feedsStore.listCategories());
 	$("#categoryList").listview("refresh");
 	$("#btn-say").on("tap",function(){
-        flash("Reading current feed...");feedsStore.say();
+        flash("Reading current feed...");
+        feedsStore.say(playFeeds);
     });
 	$(".btn-item-next").on("tap",function(){
 		advanceFeed(feedsStore.next);
@@ -139,10 +140,9 @@ $(function(){
 		container.trigger('create');
 	}
 	
-    function playFeeds(playNext){
+    function playFeeds(){
 		advanceFeed(feedsStore.next);
-        //if(playNext)
-          //  feedsStore.say(playFeeds);
+        feedsStore.say(playFeeds);
 	}
 
 });
@@ -181,18 +181,27 @@ var feedsStore = (function(){
             callback( currentItem < currentFeed.length);
 	}
     
-	function sayCurrentFeedTask(){
-		//start from the current element and onwards
-		var items = currentFeed.splice(currentItem), result=[];
-		items.forEach(function(item){
-			var text = item.title + composeBody(item.content,item.description);
-			for(var i=0; i<text.length; i+=3000){
+	function sayCurrentFeedTask(callback){
+		//start from the current element and onwards \n var items = currentFeed.splice(currentItem), result=[];
+		//items.forEach(function(item){
+        var item = currentFeed[currentItem], result=[];
+        var text = item.title + composeBody(item.content,item.description);
+			for(var i=0; i<text.length; i+=3000)
 				result.push( text.substring(i,i+3000) );
-}
-		});
-		
+		//});
 		performTask("ReadFeed",6,result.join("#item#") );
+        if( (currentItem < currentFeed.length) && callback )
+            taskListener("ReadFeed",callback);
 	}
+    
+     // recursively wait for a task to finish
+    function taskListener(taskName, callback) {
+        if ( taskRunning(taskName) ) {
+            setTimeout(taskListener, 250, taskName, callback);
+            return;
+        }
+        callback();
+    }
 	
     function composeBody(content,description){
 		if(content){ content = $( $.parseHTML(content) ).text();}
@@ -261,13 +270,17 @@ var feedsStore = (function(){
 	function nextItem(){
 		if(currentItem < currentFeed.length)
 			currentItem += 1;
-		flashLong("Next item "+currentItem+" of "+currentFeed.length);
+        else
+            currentItem = 0;
+		flash("Next item "+currentItem+" of "+currentFeed.length);
 		return renderItem(currentFeed[currentItem]);
 	}
 	
 	function previousItem(){
 		if(currentItem > 0 )
 			currentItem -= 1;
+        else
+            currentItem = currentFeed.length -1;
 		return renderItem(currentFeed[currentItem]);
 	}
     
