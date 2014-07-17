@@ -17,13 +17,6 @@
      </script>
     <!-- / -->
     <script src="file:///sdcard/Tasker/javascript/lib/jquery.mobile-1.4.3.min.js"></script>
-    <style>
-        #output{
-            border: 1px solid;
-            font-size: small;
-            font-family: monospace;
-        }
-    </style>
 </head> 
 
 <body> 
@@ -86,8 +79,19 @@
 		<div data-role="content">	
 			<div id="feedItems">
 			</div>
-
 		</div><!-- /content -->
+			
+		<div data-role="footer" data-position="fixed"  data-id="foo-controls">
+			
+<div class="ui-grid-a">
+<div class="ui-block-a">
+            <a href="#" class="btn-item-previous btn-big" data-role="button" data-icon="arrow-l" data-iconpos="notext" data-corners="false" >Previous Item</a>
+</div><!-- / block a-->	
+<div class="ui-block-b">
+        	<a href="#" class="btn-item-next btn-big" data-role="button" data-icon="arrow-r" data-iconpos="notext"  data-corners="false">Next Item</a>
+			</div><!-- / block b-->	
+</div><!-- / grid-->	
+    	</div><!-- /footer -->
 	
 	</div><!-- /page -->  
 
@@ -95,20 +99,16 @@
 $(function(){
 	$(".btn-close").bind( "tap", function( ){destroyScene('feeds');} );
 	$(".ui-loader").hide();
+  styles = { 'width': '20%',  'display' :'inline'};
+  //$('.btn-big').css(styles);
 	$("#categoryList").append(feedsStore.listCategories());
 	$("#categoryList").listview("refresh");
-	$("#btn-say").on("tap",function(){feedsStore.say()});
+	$("#btn-say").on("tap",function(){feedsStore.say(playFeeds)});
 	$(".btn-item-next").on("tap",function(){
-		var container = $("#feedItems");
-		container.empty();
-		container.append(feedsStore.next());
-		container.trigger('create');
+		advanceFeed(feedsStore.next);
 	}); 
 	$(".btn-item-previous").on("tap",function(){
-		var container = $("#feedItems");
-		container.empty();
-		container.append(feedsStore.previous());
-		container.trigger('create');
+		advanceFeed(feedsStore.previous);
 	}); 
 	
 	$("#pg-home").on("tap",".categoryItem",function(){
@@ -126,6 +126,22 @@ $(function(){
 		$.mobile.navigate($(this).attr("href"));
 	});
     
+	//direction is a callback function which corresponds to 
+	//feedsStore next or previous
+	function advanceFeed(direction){
+		var container = $("#feedItems");
+		container.empty();
+		container.append(direction());
+		container.trigger('create');
+	}
+	
+    function playFeeds(playNext){
+		advanceFeed(feedsStore.next);
+        //if(playNext)
+          //  feedsStore.say(playFeeds);
+	}
+
+});
 var feedsStore = (function(){
     var currentFeed=[]; 
 	var currentItem=0,feedsList={};
@@ -149,20 +165,44 @@ var feedsStore = (function(){
      return result;
 	}
 	
-	function sayCurrentFeed(){
-		say(currentFeed[currentItem],"com.google.android.tts", "spa-esp", "media", 7, 7);	
+    //reads the current feed and call the callback function if exists. 
+    //the callback function receives if a next item exist 
+	function sayCurrentFeed(callback){
+		var item = currentFeed[currentItem],
+		text = item.title + composeBody(item.content,item.description);
+		for(var i=0; i<text.length; i+=3000)
+        	say( text.substring(i+3000,i) ,"com.google.android.tts", "spa-esp", "media", 7, 5);
+        
+        if(callback)
+            callback( currentItem < currentFeed.length);
 	}
+    
+    function composeBody(content,desctiption){
+        if(content) content = content.replace(/<(?:.|\n)*?>/gm, '');
+        if(desctiption) desctiption = desctiption.replace(/<(?:.|\n)*?>/gm, '');
+
+        if(content && description){
+            if( content.indexOf(desctiption.substring(150,0)) >= 0){ //description is contained by content
+                return content;
+            }else{
+                return desctiption + content;
+            }
+        }else
+            return content || desctiption;
+    }
 	
 //parses an XML and extracts the items specified in the itemDesc object	
  function extractItems(data,itemDesc){
 	 var result = [],
-		 xml = $.parseXML(data), $xml = $(xml),
+		 xml = $.parseXML(data), 
+         $xml = $(xml),
 		 elements = itemDesc.elements;
         $xml.find(itemDesc.name).each(function() {
             var $this = $(this),
 		    item = {};
 			for(var el in elements){
-				item[el] = $this.find(elements[el]).text()
+				item[el] = $this.find(elements[el]).text();
+                //flash(el + " : " +item[el]);
 			}
             //Do something with item here...
             result.push(item); 
@@ -177,15 +217,14 @@ var feedsStore = (function(){
 									{ title: "title", link: "link", description: "description", 
 										   pubDate: "pubDate", content: "content\\:encoded", author: "author" 
 									}});
-		flash("Feed loaded");
+		//flash("Feed loaded");
 		return renderItem(currentFeed[0]);
 	}
 	
 	function renderItem(item){
 		var template='<div class="feedItem"><h3>#title#</h3><div>#feedBody#</div></div>';
-		flashLong(item.title);
 		return $(template.replace("#title#",item.title)
-				.replace("#feedBody#",item.description/* + items[i].content*/));
+				.replace("#feedBody#",composeBody(item.content,item.description)));
 		
 	}
 	
@@ -241,4 +280,15 @@ var feedsStore = (function(){
 }());
 </script>
 </body>
+    <style>
+        #output{
+            border: 1px solid;
+            font-size: small;
+            font-family: monospace;
+        }
+		#foo-controls{margin :0px !important; padding : 0px !important; } 
+		.btn-big 
+		{   height: 50px !important; font-size: 1em !important; width: 100% !important; margin :0px !important;
+		}
+    </style>
 </html>
