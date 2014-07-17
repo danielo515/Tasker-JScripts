@@ -63,17 +63,19 @@
 	
 		<div data-role="page" id="pg-feed" data-theme="b">
 		<div data-role="header" data-position="fixed" data-id="head1">
-            
-			<div class="ui-btn-left">
-				<a href="#pg-home" data-role="button" data-icon="back" data-iconpos="notext" class="btn-copy">Back</a>
-                <a href="#" data-role="button" data-icon="arrow-l" data-iconpos="notext" class="btn-item-previous">Previous Item</a>
-				<button class="ui-btn" id="btn-say"  data-mini="true">READ</button>
-			</div>
-            <h1>Feed</h1>
-			<div class="ui-btn-right">
-                <a href="#" data-role="button" data-icon="arrow-r" data-iconpos="notext" class="btn-item-next">Next Item</a>
-				<a href="#" data-role="button" data-icon="delete" data-iconpos="notext" class="btn-close">exit</a>
-			</div>
+            <div class="ui-grid-b">
+                <div class="ui-block-a">
+                    <a href="#pg-home" data-role="button" data-icon="back" data-iconpos="notext" class="btn-copy">Back</a>
+                    <a href="#" data-role="button" data-icon="arrow-l" data-iconpos="notext" class="btn-item-previous">Previous Item</a>
+                </div>
+                <div class="ui-block-b">
+                    <button class="ui-btn btn-big" id="btn-say"  data-mini="true">READ</button>
+                </div>
+                <div class="ui-block-c">
+                    <a href="#" data-role="button" data-icon="arrow-r" data-iconpos="notext" class="btn-item-next">Next Item</a>
+                    <a href="#" data-role="button" data-icon="delete" data-iconpos="notext" class="btn-close">exit</a>
+                </div>
+        </div>
 		</div><!-- /header -->
 
 		<div data-role="content">	
@@ -103,7 +105,9 @@ $(function(){
   //$('.btn-big').css(styles);
 	$("#categoryList").append(feedsStore.listCategories());
 	$("#categoryList").listview("refresh");
-	$("#btn-say").on("tap",function(){feedsStore.say(playFeeds)});
+	$("#btn-say").on("tap",function(){
+        flash("Reading current feed...");feedsStore.say();
+    });
 	$(".btn-item-next").on("tap",function(){
 		advanceFeed(feedsStore.next);
 	}); 
@@ -165,9 +169,9 @@ var feedsStore = (function(){
      return result;
 	}
 	
-    //reads the current feed and call the callback function if exists. 
+    //reads the current feed item and call the callback function if exists. 
     //the callback function receives if a next item exist 
-	function sayCurrentFeed(callback){
+	function sayCurrentFeedItem(callback){
 		var item = currentFeed[currentItem],
 		text = item.title + composeBody(item.content,item.description);
 		for(var i=0; i<text.length; i+=3000)
@@ -177,18 +181,31 @@ var feedsStore = (function(){
             callback( currentItem < currentFeed.length);
 	}
     
-    function composeBody(content,desctiption){
-        if(content) content = content.replace(/<(?:.|\n)*?>/gm, '');
-        if(desctiption) desctiption = desctiption.replace(/<(?:.|\n)*?>/gm, '');
+	function sayCurrentFeedTask(){
+		//start from the current element and onwards
+		var items = currentFeed.splice(currentItem), result=[];
+		items.forEach(function(item){
+			var text = item.title + composeBody(item.content,item.description);
+			for(var i=0; i<text.length; i+=3000){
+				result.push( text.substring(i,i+3000) );
+}
+		});
+		
+		performTask("ReadFeed",6,result.join("#item#") );
+	}
+	
+    function composeBody(content,description){
+		if(content){ content = $( $.parseHTML(content) ).text();}
+		if(description){ description =  $( $.parseHTML(description) ).text();}
 
         if(content && description){
-            if( content.indexOf(desctiption.substring(150,0)) >= 0){ //description is contained by content
+            if( content.indexOf(description.substring(150,0)) >= 0){ //description is contained by content
                 return content;
             }else{
-                return desctiption + content;
+                return description + content;
             }
         }else
-            return content || desctiption;
+            return content || description;
     }
 	
 //parses an XML and extracts the items specified in the itemDesc object	
@@ -215,7 +232,7 @@ var feedsStore = (function(){
 		var feed = readFile("/sdcard/Tasker/feeds/"+feedName+".xml");
 		currentFeed = extractItems(feed, {name: "item",elements: 
 									{ title: "title", link: "link", description: "description", 
-										   pubDate: "pubDate", content: "content\\:encoded", author: "author" 
+										   pubDate: "pubDate", content: "encoded", author: "author" 
 									}});
 		//flash("Feed loaded");
 		return renderItem(currentFeed[0]);
@@ -275,7 +292,7 @@ var feedsStore = (function(){
      }
 	
 	var core={ list:listSources, listCategories:listCategories, load:loadFeed,
-			  next:nextItem, previous:previousItem, say:sayCurrentFeed};
+			  next:nextItem, previous:previousItem, say:sayCurrentFeedTask};
     return core;
 }());
 </script>
