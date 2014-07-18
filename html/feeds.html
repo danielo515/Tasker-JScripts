@@ -148,7 +148,7 @@ $(function(){
 });
 var feedsStore = (function(){
     var currentFeed=[]; 
-	var currentItem=0,feedsList={};
+	var currentItem=0,feedsList={},continuous=true;
      loadSources();
     
     function paprseOPM(data){
@@ -181,6 +181,10 @@ var feedsStore = (function(){
             callback( currentItem < currentFeed.length);
 	}
     
+    function stopTalking(){
+        continuous=false;
+    }
+    
 	function sayCurrentFeedTask(callback){
 		//start from the current element and onwards \n var items = currentFeed.splice(currentItem), result=[];
 		//items.forEach(function(item){
@@ -191,7 +195,7 @@ var feedsStore = (function(){
 		//});
 		performTask("ReadFeed",6,result.join("#item#") );
         if( (currentItem < currentFeed.length) && callback )
-            taskListener("ReadFeed",callback);
+            taskListener("ReadFeed",function(){ if(continuous)callback();});
 	}
     
      // recursively wait for a task to finish
@@ -228,7 +232,6 @@ var feedsStore = (function(){
 		    item = {};
 			for(var el in elements){
 				item[el] = $this.find(elements[el]).text();
-                //flash(el + " : " +item[el]);
 			}
             //Do something with item here...
             result.push(item); 
@@ -246,15 +249,8 @@ var feedsStore = (function(){
 		//flash("Feed loaded");
 		return renderItem(currentFeed[0]);
 	}
-	
-	function renderItem(item){
-		var template='<div class="feedItem"><h3>#title#</h3><div>#feedBody#</div></div>';
-		return $(template.replace("#title#",item.title)
-				.replace("#feedBody#",composeBody(item.content,item.description)));
-		
-	}
-	
-    function loadSources(){
+    
+     function loadSources(){
         var sources = readFile("Tasker/data/feedly.opml"),
 	    list = paprseOPM(sources),category="";
         list.forEach(function(i){
@@ -267,8 +263,16 @@ var feedsStore = (function(){
 		});
     }
 	
+	function renderItem(item){
+		var template='<div class="feedItem"><h3>#title#</h3><div>#feedBody#</div></div>';
+		return $(template.replace("#title#",item.title)
+				.replace("#feedBody#",composeBody(item.content,item.description)));
+		
+	}
+	
+   
 	function nextItem(){
-		if(currentItem < currentFeed.length)
+		if(currentItem < currentFeed.length -1)
 			currentItem += 1;
         else
             currentItem = 0;
