@@ -69,7 +69,7 @@
                     <a href="#" data-role="button" data-icon="arrow-l" data-iconpos="notext" class="btn-item-previous">Previous Item</a>
                 </div>
                 <div class="ui-block-b">
-                    <button class="ui-btn btn-big" id="btn-say"  data-mini="true">READ</button>
+                    <button class="ui-btn btn-big" id="btn-say"  action="play" data-mini="true">READ</button>
                 </div>
                 <div class="ui-block-c">
                     <a href="#" data-role="button" data-icon="arrow-r" data-iconpos="notext" class="btn-item-next">Next Item</a>
@@ -106,8 +106,15 @@ $(function(){
 	$("#categoryList").append(feedsStore.listCategories());
 	$("#categoryList").listview("refresh");
 	$("#btn-say").on("tap",function(){
-        flash("Reading current feed...");
-        feedsStore.say(playFeeds);
+        var action = $(this).attr("action");
+        if(action == "play"){
+           flash("Reading current feed...");
+            $(this).attr("action","stop");
+            feedsStore.say(playFeeds);
+        }else{
+            feedsStore.stop();
+            $(this).attr("action","play");
+        }
     });
 	$(".btn-item-next").on("tap",function(){
 		advanceFeed(feedsStore.next);
@@ -183,6 +190,7 @@ var feedsStore = (function(){
     
     function stopTalking(){
         continuous=false;
+        performTask("StopTask",10,"ReadFeed");
     }
     
 	function sayCurrentFeedTask(callback){
@@ -309,7 +317,7 @@ var feedsStore = (function(){
      }
 	
 	var core={ list:listSources, listCategories:listCategories, load:loadFeed,
-			  next:nextItem, previous:previousItem, say:sayCurrentFeedTask};
+			  next:nextItem, previous:previousItem, say:sayCurrentFeedTask, stop:stopTalking};
     return core;
 }());
 </script>
