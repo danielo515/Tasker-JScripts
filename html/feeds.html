@@ -24,14 +24,9 @@
 	<div data-role="page" id="pg-home" data-theme="b">
 
     <div data-role="header" data-position="fixed" data-id="head1">
-        <input type="hidden" id="clipboard"/>
-        <div class="ui-btn-left">
-            <a href="#" data-role="button" data-icon="back" data-iconpos="notext" class="btn-copy">Copy to clipboard</a>
-        </div>
         <h1>Control</h1>
-        <div class="ui-btn-right">
-            <a href="#" data-role="button" data-icon="delete" data-iconpos="notext" class="btn-close">exit</a>
-        </div>
+			<a href="#" data-role="button" data-icon="delete" data-iconpos="notext" class="btn-close ui-btn-right">exit</a>
+            <a href="#" data-role="button" data-icon="play-circle-o" data-iconpos="notext" class="icon-big ui-btn-left ui-nodisc-icon">exit</a>
     </div><!-- /header -->
 
 	<div data-role="content">	
@@ -62,18 +57,16 @@
 	</div><!-- /page -->    
 	
 		<div data-role="page" id="pg-feed" data-theme="b">
-		<div data-role="header" data-position="fixed" data-id="head1">
+		<div data-role="header" data-position="fixed" data-id="head1" data-add-back-btn="true">
             <div class="ui-grid-b">
                 <div class="ui-block-a">
-                    <a href="#pg-home" data-role="button" data-icon="back" data-iconpos="notext" class="btn-copy">Back</a>
-                    <a href="#" data-role="button" data-icon="arrow-l" data-iconpos="notext" class="btn-item-previous">Previous Item</a>
+                    <a href="#pg-category" data-role="button" data-icon="back" data-iconpos="notext">Back</a>
                 </div>
                 <div class="ui-block-b">
-                    <button class="ui-btn btn-big" id="btn-say"  action="play" data-mini="true">READ</button>
+                    <button class="ui-btn ui-icon-audio btn-big ui-btn-icon-left" id="btn-say"  action="play" >PLAY</button>
                 </div>
                 <div class="ui-block-c">
-                    <a href="#" data-role="button" data-icon="arrow-r" data-iconpos="notext" class="btn-item-next">Next Item</a>
-                    <a href="#" data-role="button" data-icon="delete" data-iconpos="notext" class="btn-close">exit</a>
+                    <a href="#" data-role="button" data-icon="delete" data-iconpos="notext" class="btn-close ui-btn-right" >exit</a>
                 </div>
         </div>
 		</div><!-- /header -->
@@ -85,13 +78,16 @@
 			
 		<div data-role="footer" data-position="fixed"  data-id="foo-controls">
 			
-<div class="ui-grid-a">
+<div class="ui-grid-b">
 <div class="ui-block-a">
             <a href="#" class="btn-item-previous btn-big" data-role="button" data-icon="arrow-l" data-iconpos="notext" data-corners="false" >Previous Item</a>
 </div><!-- / block a-->	
 <div class="ui-block-b">
+            <a href="#" class="icon-big ui-nodisc-icon btn-big" data-role="button" data-icon="play-circle-o" data-iconpos="notext"  data-corners="false">exit</a>
+</div><!-- / block b-->	
+<div class="ui-block-c">
         	<a href="#" class="btn-item-next btn-big" data-role="button" data-icon="arrow-r" data-iconpos="notext"  data-corners="false">Next Item</a>
-			</div><!-- / block b-->	
+</div><!-- / block c-->	
 </div><!-- / grid-->	
     	</div><!-- /footer -->
 	
@@ -109,11 +105,11 @@ $(function(){
         var action = $(this).attr("action");
         if(action == "play"){
            flash("Reading current feed...");
-            $(this).attr("action","stop");
+            $(this).attr("action","stop"); $(this).text("STOP");$(this).removeClass("ui-icon-audio ui-btn-icon-left");
             feedsStore.say(playFeeds);
         }else{
             feedsStore.stop();
-            $(this).attr("action","play");
+            $(this).attr("action","play");$(this).text("PLAY");$(this).addClass("ui-icon-audio ui-btn-icon-left");
         }
     });
 	$(".btn-item-next").on("tap",function(){
@@ -123,6 +119,7 @@ $(function(){
 		advanceFeed(feedsStore.previous);
 	}); 
 	
+	//Category Selected
 	$("#pg-home").on("tap",".categoryItem",function(){
 	  $("#feedList").empty();
 	  $("#feedList").append(
@@ -130,7 +127,7 @@ $(function(){
 	  );
 	  $("#feedList").listview("refresh");
   });
-	
+	//Feed selected
 	$("#pg-category").on("tap",".sourceItem",function(){
 		var container = $("#feedItems"),feedName=$(this).attr("feed");
 		container.empty();
@@ -181,8 +178,8 @@ var feedsStore = (function(){
 	function sayCurrentFeedItem(callback){
 		var item = currentFeed[currentItem],
 		text = item.title + composeBody(item.content,item.description);
-		for(var i=0; i<text.length; i+=3000)
-        	say( text.substring(i+3000,i) ,"com.google.android.tts", "spa-esp", "media", 7, 5);
+		for(var i=0; i<text.length; i+=300)
+        	say( text.substring(i+300,i) ,"com.google.android.tts", "spa-esp", "media", 7, 5);
         
         if(callback)
             callback( currentItem < currentFeed.length);
@@ -198,8 +195,8 @@ var feedsStore = (function(){
 		//items.forEach(function(item){
         var item = currentFeed[currentItem], result=[];
         var text = item.title + composeBody(item.content,item.description);
-			for(var i=0; i<text.length; i+=3000)
-				result.push( text.substring(i,i+3000) );
+			for(var i=0; i<text.length; i+=300)
+				result.push( text.substring(i,i+300) );
 		//});
 		performTask("ReadFeed",6,result.join("#item#") );
         if( (currentItem < currentFeed.length) && callback )
@@ -330,7 +327,14 @@ var feedsStore = (function(){
         }
 		#foo-controls{margin :0px !important; padding : 0px !important; } 
 		.btn-big 
-		{   height: 50px !important; font-size: 1em !important; width: 100% !important; margin :0px !important;
-		}
+		{   height: 50px !important; font-size: 1em !important; width: 100% !important; margin :0px !important;}
+		.icon-big 
+		{ background-size:50px 50px !important; 
+		  height: 50px !important; width:50px !important; /*background-position: center;*/
+		  }
+		.ui-icon-play-circle-o 
+		{background: url("data:image/svg+xml;charset=US-ASCII,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22utf-8%22%3F%3E%3C!DOCTYPE%20svg%20PUBLIC%20%22-%2F%2FW3C%2F%2FDTD%20SVG%201.1%20Tiny%2F%2FEN%22%20%22http%3A%2F%2Fwww.w3.org%2FGraphics%2FSVG%2F1.1%2FDTD%2Fsvg11-tiny.dtd%22%3E%3Csvg%20version%3D%221.1%22%20baseProfile%3D%22tiny%22%20id%3D%22Layer_1%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20xmlns%3Axlink%3D%22http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%22%20x%3D%220px%22%20y%3D%220px%22%20width%3D%2216px%22%20height%3D%2216px%22%20viewBox%3D%220%200%20500%20500%22%20xml%3Aspace%3D%22preserve%22%3E%20%3Cpath%20d%3D%22M330.357%20250q0%2010.324-8.929%2015.346l-151.786%2089.286q-4.185%202.511-8.929%202.511-4.464%200-8.929-2.232-8.929-5.301-8.929-15.625v-178.571q0-10.324%208.929-15.625%209.208-5.022%2017.857%200.279l151.786%2089.286q8.929%205.022%208.929%2015.346zM366.071%20250q0-41.294-20.368-76.172t-55.246-55.246-76.172-20.368-76.172%2020.368-55.246%2055.246-20.368%2076.172%2020.368%2076.172%2055.246%2055.246%2076.172%2020.368%2076.172-20.368%2055.246-55.246%2020.368-76.172zM428.571%20250q0%2058.315-28.739%20107.562t-77.985%2077.985-107.562%2028.739-107.562-28.739-77.985-77.985-28.739-107.562%2028.739-107.562%2077.985-77.985%20107.562-28.739%20107.562%2028.739%2077.985%2077.985%2028.739%20107.562z%22%20fill%3D%22%23000000%22%20%2F%3E%3C%2Fsvg%3E")
+		 50% 50% no-repeat;}
+
     </style>
 </html>
