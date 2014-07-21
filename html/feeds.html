@@ -92,7 +92,6 @@ $(function(){
 	$("#categoryList").listview("refresh");
 	$("#btn-say").on("tap",switchButton);
 	$(".btn-item-next").on("tap",function(){
-		flash(feedSpeaker.mode().continuous);
 		if(feedSpeaker.mode().continuous) 
 			feedSpeaker.stopCurrent(); //this forces speaker to execute its callback. playNextFeed in this case
 		else
@@ -138,7 +137,7 @@ $(function(){
     function playNextFeed(){
 		if( feedsStore.hasNext() && feedSpeaker.mode().continuous ){
 			advanceFeed(feedsStore.next);
-			feedsSpeaker.read(feedsStore.getCurrentItem(),playNextFeed);
+			feedSpeaker.read(feedsStore.getCurrentItem(),playNextFeed);
 		}
 	}
 	
