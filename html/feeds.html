@@ -164,6 +164,30 @@ $(function(){
 
 });
 
+var options = (function(){
+    var store = loadStore("Tasker/data/feedReader/","options.json");
+    //loads the store from the data file
+    //{string} path: a string indicating the path to load the store from. It should end with slash (/)
+    function loadStore(path,file){
+        var content = readFile(path+file);
+        if(!content){
+            var dir = shell("[ -d "+path+" ] && echo 1 || echo 0",true);
+            if(dir == 0){ 
+                shell("mkdir -p "+path,true); 
+            }
+            shell("touch "+path+file,true); 
+            return {};
+        }
+        
+        flashLong("READED: "+content);
+        return JSON.parse(content);
+
+    }
+    
+    var core={};
+    return core;
+}());    
+    
 var feedSpeaker = (function(){
 	var continuous = false;
 	function stopTalking(){
