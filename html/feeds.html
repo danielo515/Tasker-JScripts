@@ -91,7 +91,13 @@ $(function(){
 	$("#categoryList").append(feedsStore.listCategories());
 	$("#categoryList").listview("refresh");
 	$("#btn-say").on("tap",function(){
-        switchButton($(this))});
+        if($(this).attr("action") == "play"){
+			feedSpeaker.play(feedsStore.getCurrentItem(),playNextFeed);
+        }else{
+            feedSpeaker.stop();
+        }
+        switchButton($(this))
+    });
 	$(".btn-item-next").on("tap",function(){
 		if(feedSpeaker.mode().continuous) 
 			feedSpeaker.stopCurrent(); //this forces speaker to execute its callback. playNextFeed in this case
@@ -155,15 +161,15 @@ $(function(){
             button.attr("action","play");
 			button.text("PLAY");
         }
-		SwitchIcon(this,["play-circle-o","stop"]);
+		SwitchIcon(button,["play-circle-o","stop"]);
 	}
 	
 	function SwitchIcon(button,icons){
-		var $button = $(button),icon = $button.attr("data-icon"),
+		var icon = button.attr("data-icon"),
 			 oldIcon="ui-icon-"+icon, 
 			 newIcon = (icons[0] == icon? icons[1] : icons[0]);
-		$button.removeClass(oldIcon);
-		$button.addClass("ui-icon-"+newIcon).attr("data-icon",newIcon);
+		button.removeClass(oldIcon);
+		button.addClass("ui-icon-"+newIcon).attr("data-icon",newIcon);
 	}
 
 });
