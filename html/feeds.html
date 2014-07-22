@@ -90,7 +90,8 @@ $(function(){
 	$(".ui-loader").hide();
 	$("#categoryList").append(feedsStore.listCategories());
 	$("#categoryList").listview("refresh");
-	$("#btn-say").on("tap",switchButton);
+	$("#btn-say").on("tap",function(){
+        switchButton($(this))});
 	$(".btn-item-next").on("tap",function(){
 		if(feedSpeaker.mode().continuous) 
 			feedSpeaker.stopCurrent(); //this forces speaker to execute its callback. playNextFeed in this case
@@ -139,18 +140,20 @@ $(function(){
 			flash(options.markAsReaded( feedsStore.getCurrentItem().title() ));
             advanceFeed(feedsStore.next);
 			feedSpeaker.read(feedsStore.getCurrentItem(),playNextFeed);
-		}
+		}else{
+            switchButton($("#btn-say"));
+        }
 	}
 	
-	function switchButton(){
-		 var action = $(this).attr("action");
+	function switchButton(button){
+		 var action = button.attr("action");
         if(action == "play"){
-			$(this).attr("action","stop");
+			button.attr("action","stop");
 			feedSpeaker.play(feedsStore.getCurrentItem(),playNextFeed);
         }else{
             feedSpeaker.stop();
-            $(this).attr("action","play");
-			$(this).text("PLAY");
+            button.attr("action","play");
+			button.text("PLAY");
         }
 		SwitchIcon(this,["play-circle-o","stop"]);
 	}
@@ -181,8 +184,7 @@ var options = (function(undefined){
             shell("touch "+path+file,true); 
             return { readedItems:{},options:{} };
         }
-        
-        flashLong("READED: "+content);
+
         return JSON.parse(content);
 
     }
