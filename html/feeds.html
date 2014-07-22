@@ -136,7 +136,8 @@ $(function(){
 		
     function playNextFeed(){
 		if( feedsStore.hasNext() && feedSpeaker.mode().continuous ){
-			advanceFeed(feedsStore.next);
+			flash(options.markAsReaded( feedsStore.getCurrentItem().title() ));
+            advanceFeed(feedsStore.next);
 			feedSpeaker.read(feedsStore.getCurrentItem(),playNextFeed);
 		}
 	}
@@ -164,8 +165,10 @@ $(function(){
 
 });
 
-var options = (function(){
-    var store = loadStore("Tasker/data/feedReader/","options.json");
+var options = (function(undefined){
+    var path = "/sdcard/Tasker/data/feedReader/", file = "options.json", 
+        store = loadStore(path,file), d = new Date();
+    
     //loads the store from the data file
     //{string} path: a string indicating the path to load the store from. It should end with slash (/)
     function loadStore(path,file){
@@ -176,7 +179,7 @@ var options = (function(){
                 shell("mkdir -p "+path,true); 
             }
             shell("touch "+path+file,true); 
-            return {};
+            return { readedItems:{},options:{} };
         }
         
         flashLong("READED: "+content);
@@ -184,7 +187,22 @@ var options = (function(){
 
     }
     
-    var core={};
+    //saves the store to the data file
+    function saveStore(){
+        var data = JSON.stringify(store);
+        //do not append
+        var result = writeFile(path+file,data,false);
+        return result;
+    }
+    function markAsReaded(feedTitle){
+        store.readedItems[feedTitle] = d.getTime();
+        return saveStore();
+    }
+    function isReaded(feedTitle){
+        return store.readedItems[feedTitle] !== undefined;
+    }
+      
+    var core={isReaded:isReaded,markAsReaded:markAsReaded};
     return core;
 }());    
     
@@ -279,6 +297,8 @@ var feedsStore = (function(){
 		    item = {};
 			for(var el in elements){
 				item[el] = $this.find(elements[el]).text();
+                if(el == "title")
+                    if(options.isReaded(item.title)) return;
 			}
             //Do something with item here...
             result.push(item); 
